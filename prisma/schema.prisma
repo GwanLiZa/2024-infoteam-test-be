@@ -38,7 +38,7 @@ model Post {
 
 model Tag {
   id Int @id @default(autoincrement())
-  tag String
+  tag String @unique
   posts TagsOnPosts[]
 
   @@index([tag])
