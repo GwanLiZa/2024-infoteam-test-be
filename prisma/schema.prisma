@@ -19,12 +19,12 @@ model User {
   email String @unique
   createdAt DateTime @default(now())
   password String
-  posts Post[] 
+  posts PostModel[] 
 
   @@index([email])
 }
 
-model Post {
+model PostModel {
   id Int @id @default(autoincrement())
   title String
   text String
@@ -47,7 +47,7 @@ model Tag {
 model TagsOnPosts {
   tag Tag @relation(fields: [tagId], references: [id])
   tagId Int
-  post Post @relation(fields: [postId], references: [id])
+  post PostModel @relation(fields: [postId], references: [id])
   postId Int
 
   @@id([tagId, postId])
