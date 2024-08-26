@@ -155,38 +155,19 @@ export class PostService {
   async update(postId: string, userId: number, postData: PostDto): Promise<PostModel> {
     const post = await this.prisma.postModel.findUnique({
       where: { id: +postId },
+      select: { authorId: true }
     });
 
     if (!post) {
       throw new NotFoundException(`Post with ID: ${postId} not found.`);
     }
     if (post.authorId !== userId) {
-      throw new ForbiddenException('You are not authorized to update this post.');
+      throw new ForbiddenException('You are not authorized to delete this post.');
     }
 
-    const searchTagId = await Promise.all(
-      postData.tags.map(async (t) => {
-        const tag = await this.prisma.tag.findUnique({
-          where: { tag: t },
-        });
-        return tag ? tag.id : null;
-      }),
-    );
-    
-    const tagUpserts = postData.tags.map((t) => ({
-      where: {
-        tagId_postId: {
-          tagId: searchTagId.find(id => id !== null),
-          postId: +postId
-        }
-      },
-      update: {
-        tag: { connectOrCreate: { where: { tag: t }, create: { tag: t } } },
-      },
-      create: {
-        tag: { connectOrCreate: { where: { tag: t }, create: { tag: t } } },
-      },
-    }));
+    await this.prisma.tagsOnPosts.deleteMany({
+      where: { postId: +postId },
+    });
 
     const updatedPost = await this.prisma.postModel.update({
       where: { id: +postId },
@@ -194,8 +175,13 @@ export class PostService {
         title: postData.title,
         text: postData.text,
         tags: {
-          upsert: tagUpserts
-        },
+          deleteMany: {},
+          create: postData.tags.map(t => ({
+            tag: {
+              connectOrCreate: { where: { tag: t }, create: { tag: t } }
+            }
+          }))
+        }
       },
       include: {
         author: {
@@ -204,17 +190,17 @@ export class PostService {
             name: true,
             email: true,
             createdAt: true,
-            password: false,
-          },
+            password: false
+          }
         },
         tags: {
           select: {
-            tag: true,
-          },
-        },
-      },
+            tag: true
+          }
+        }
+      }
     });
-
+  
     return updatedPost;
   }
 }
