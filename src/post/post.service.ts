@@ -8,21 +8,65 @@ export class PostService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAll(): Promise<PostModel[]> {
-    return this.prisma.postModel.findMany();
+    return this.prisma.postModel.findMany({
+      include: {
+        author: {
+          select: {
+            id: false,
+            name: true,
+            email: true,
+            createdAt: true,
+            password: false
+          }
+        },
+        tags: {
+          select: {
+            tag: true 
+          }
+        }
+      }
+    });
   }
 
-  async getOne(postId: string): Promise<PostModel> {
-    const post = await this.prisma.postModel.findUnique({
-      where: {id: +postId}
+  async getOne(keyword: string): Promise<PostModel[]> {
+    const post = await this.prisma.postModel.findMany({
+      where: {
+        OR: [
+          {
+            title: {
+              contains: keyword,
+              mode: 'insensitive'
+            }
+          },
+          {
+            text: {
+              contains: keyword,
+              mode: 'insensitive'
+            }
+          }
+        ]
+      },
+      include: {
+        author: {
+          select: {
+            id: false,
+            name: true,
+            email: true,
+            createdAt: true,
+            password: false
+          }
+        },
+        tags: {
+          select: {
+            tag: true 
+          }
+        }
+      }
     });
-    if(!post) {
-        throw new NotFoundException(`Post with ID: ${postId} not found.`)
-    }
     return post;
   }
 
   async create(postData: PostDto, userId: number): Promise<PostModel> {
-
     const newPost = await this.prisma.postModel.create({
       data:{
         title: postData.title,
@@ -34,6 +78,22 @@ export class PostService {
               connectOrCreate: { where: { tag: t }, create: { tag: t}}
             }   
           }))
+        }
+      },
+      include: {
+        author: {
+          select: {
+            id: false,
+            name: true,
+            email: true,
+            createdAt: true,
+            password: false
+          }
+        },
+        tags: {
+          select: {
+            tag: true 
+          }
         }
       }
     });

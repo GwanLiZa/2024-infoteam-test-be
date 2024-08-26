@@ -17,12 +17,12 @@ export class PostController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/:id")
+  @Get("/:keyword")
   @ApiOperation({summary:'게시물 검색', description: '해당 ID의 게시물 정보를 불러옵니다.'})
   @ApiResponse({status:201, description:'게시물을 불러오는데 성공하였습니다.'})
   @ApiResponse({status:404, description:'게시물을 불러오는데 실패하였습니다.'})
-  getOne(@Param("id") postId:string): Promise<PostModel> {
-    return this.postService.getOne(postId);
+  getOne(@Param("keyword") keyword:string): Promise<PostModel[]> {
+    return this.postService.getOne(keyword);
   }
 
   @UseGuards(JwtAuthGuard)
