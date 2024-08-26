@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PostModel } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PostDto } from '../dto/post.dto';
@@ -131,8 +131,21 @@ export class PostService {
     return newPost
   }
 
-  async remove(postId: string) : Promise<boolean> {
-    await this.searchByKeyword(postId);
+  async remove(postId: string, userId: number): Promise<boolean> {
+    const post = await this.prisma.postModel.findUnique({
+      where: { id: +postId },
+      select: { authorId: true }
+    });
+
+    if (!post) {
+      throw new NotFoundException(`Post with ID: ${postId} not found.`);
+    }
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('You are not authorized to delete this post.');
+    }
+    await this.prisma.tagsOnPosts.deleteMany({
+      where: { postId: +postId }
+    });
     await this.prisma.postModel.delete({
       where: {id: +postId},
     });

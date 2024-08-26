@@ -46,10 +46,12 @@ export class PostController {
 
   @UseGuards(JwtAuthGuard)
   @Delete("/:id")
-  @ApiOperation({summary:'게시물 삭제', description: '게시물을 삭제합니다.'})
+  @ApiOperation({summary:'게시물 삭제', description: '게시물의 작성자가 게시물을 삭제합니다.'})
   @ApiResponse({status:201, description:'게시물을 삭제하는데 성공하였습니다.'})
   @ApiResponse({status:404, description:'게시물을 삭제하는데 실패하였습니다.'})
-  remove(@Param("id") postId:string): Promise<boolean>{
-    return this.postService.remove(postId);
+  @ApiResponse({ status: 403, description: '게시물 삭제 권한이 없습니다.' })
+  remove(@Param("id") postId:string, @Request() req): Promise<boolean>{
+    const userId = req.user.userId;
+    return this.postService.remove(postId, userId);
   }
 }
