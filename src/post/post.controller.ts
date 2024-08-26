@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards , Request} from '@nestjs/common';
+import { Controller, Put, Get, Post, Delete, Param, Query, Body, UseGuards , Request} from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostModel } from '@prisma/client'; 
 import { PostDto } from '../dto/post.dto';
@@ -53,5 +53,16 @@ export class PostController {
   remove(@Param("id") postId:string, @Request() req): Promise<boolean>{
     const userId = req.user.userId;
     return this.postService.remove(postId, userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async updatePost(
+    @Param('id') postId: string,
+    @Body() postData: PostDto,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    return this.postService.update(postId, userId, postData);
   }
 }
