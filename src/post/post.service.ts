@@ -28,7 +28,7 @@ export class PostService {
     });
   }
 
-  async getOne(keyword: string): Promise<PostModel[]> {
+  async searchByKeyword(keyword: string): Promise<PostModel[]> {
     const post = await this.prisma.postModel.findMany({
       where: {
         OR: [
@@ -64,6 +64,36 @@ export class PostService {
       }
     });
     return post;
+  }
+
+  async searchByTag(tagName: string): Promise<PostModel[]> {
+    return this.prisma.postModel.findMany({
+      where: {
+        tags: {
+          some: {
+            tag: {
+              tag: tagName
+            }
+          }
+        }
+      },
+      include: {
+        author: {
+          select: {
+            id: false,
+            name: true,
+            email: true,
+            createdAt: true,
+            password: false
+          }
+        },
+        tags: {
+          select: {
+            tag: true 
+          }
+        }
+      }
+    });
   }
 
   async create(postData: PostDto, userId: number): Promise<PostModel> {
@@ -102,7 +132,7 @@ export class PostService {
   }
 
   async remove(postId: string) : Promise<boolean> {
-    await this.getOne(postId);
+    await this.searchByKeyword(postId);
     await this.prisma.postModel.delete({
       where: {id: +postId},
     });

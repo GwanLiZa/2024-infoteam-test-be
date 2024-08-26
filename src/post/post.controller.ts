@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards , Request} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, Body, UseGuards , Request} from '@nestjs/common';
 import { PostService } from './post.service';
 import { PostModel } from '@prisma/client'; 
 import { PostDto } from '../dto/post.dto';
@@ -11,18 +11,27 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Get()
-  @ApiOperation({summary:'전체 게시물', description: '모든 게시물에 관련된 정보를 불러옵니다.'})
+  @ApiOperation({summary:'전체 게시물', description: '모든 게시물 정보를 불러옵니다.'})
   getAll(): Promise<PostModel[]> {
     return this.postService.getAll();
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get("/:keyword")
-  @ApiOperation({summary:'게시물 검색', description: '해당 ID의 게시물 정보를 불러옵니다.'})
+  @Get('search')
+  @ApiOperation({summary:'게시물 검색', description: '필터링한 게시물 정보를 불러옵니다.'})
   @ApiResponse({status:201, description:'게시물을 불러오는데 성공하였습니다.'})
   @ApiResponse({status:404, description:'게시물을 불러오는데 실패하였습니다.'})
-  getOne(@Param("keyword") keyword:string): Promise<PostModel[]> {
-    return this.postService.getOne(keyword);
+  search(
+    @Query('keyword') keyword?: string,
+    @Query('tag') tag?: string
+  ): Promise<PostModel[]> {
+    if (keyword) {
+      return this.postService.searchByKeyword(keyword);
+    } else if (tag) {
+      return this.postService.searchByTag(tag);
+    } else {
+      throw new Error('No keyword or tag was entered.');
+    }
   }
 
   @UseGuards(JwtAuthGuard)
